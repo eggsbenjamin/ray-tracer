@@ -1,10 +1,5 @@
 package game
 
-import (
-	"fmt"
-	"math"
-)
-
 type Player struct {
 	Pos *Point
 	Dir float64
@@ -26,8 +21,7 @@ func (p *Player) Rotate(v float64) {
 	p.Cam.Angle += v
 }
 
-func (p *Player) Move(v float64) {
-	n := GetEndPoint(p.Pos, v, p.Dir)
+func (p *Player) Move(n *Point) {
 	p.Pos.X = n.X
 	p.Pos.Y = n.Y
 }

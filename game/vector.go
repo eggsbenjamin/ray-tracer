@@ -5,7 +5,7 @@ import "math"
 type Vector []*Point
 
 //	constructor
-func NewVector(p1, p2 *Point) *Vector {
+func NewVector(p1, p2 Point) *Vector {
 	v := Vector(DDA(p1, p2))
 	return &v
 }
