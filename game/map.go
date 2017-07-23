@@ -26,15 +26,20 @@ func (m *Map) GetSize() (int, int) {
 	return m.width(), m.height()
 }
 
-//	returns a boolean indicating if the given position is walkable
-func (m *Map) Walkable(p *Point) bool {
+//	gets the value of a square containing a given point
+func (m *Map) GetValueAtPoint(p *Point) int {
 	x := int(math.Floor(p.X))
 	y := int(math.Floor(p.Y))
 	w, h := m.GetSize()
 	if x >= w || y >= h { //	out of bounds...
-		return false
+		return -1
 	}
-	return m.Grid[x][y] == 0
+	return m.Grid[x][y]
+}
+
+//	returns a boolean indicating if the given position is walkable
+func (m *Map) Walkable(p *Point) bool {
+	return m.GetValueAtPoint(p) == 0
 }
 
 func (m *Map) width() int {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"runtime"
@@ -21,7 +22,12 @@ func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
 	for {
 		select {
 		case <-tick.C:
+			is := game.GetXIntersects(pl.Pos, pl.Dir, 10)
+			for _, i := range is {
+				fmt.Println(i)
+			}
 			clear(r)
+			drawMap(m, w, r)
 			drawPlayer(pl, m, w, r)
 			r.Present()
 		}
@@ -46,7 +52,7 @@ func drawMap(m *game.Map, win *sdl.Window, r *sdl.Renderer) {
 func drawPlayer(pl *game.Player, m *game.Map, win *sdl.Window, r *sdl.Renderer) {
 	w, h := win.GetSize()
 	mw, mh := m.GetSize()
-	pl.Cam.Render(w, h, mw, mh, 10.0, r)
+	pl.Cam.Render(w, h, mw, mh, 2.0, r)
 	/*
 		var xSc float64 = float64(w) / float64(mw)
 		var ySc float64 = float64(h) / float64(mh)
@@ -73,9 +79,9 @@ func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
 			pl.Move(n)
 		}
 	case sdl.K_LEFT:
-		pl.Rotate(-0.2)
+		pl.Rotate(-0.1)
 	case sdl.K_RIGHT:
-		pl.Rotate(0.2)
+		pl.Rotate(0.1)
 	}
 }
 
@@ -108,14 +114,14 @@ func main() {
 	m := game.NewMap(5, 5, pt)
 	m.Grid = [][]int{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	}
 

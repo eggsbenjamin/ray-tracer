@@ -1,5 +1,7 @@
 package game
 
+import "math"
+
 type Player struct {
 	Pos *Point
 	Dir float64
@@ -17,8 +19,18 @@ func NewPlayer(x, y, dr float64) *Player {
 }
 
 func (p *Player) Rotate(v float64) {
+	if p.Dir+v > 2*math.Pi {
+		p.Dir = (p.Dir + v) - (2 * math.Pi)
+		p.Cam.Angle = p.Dir
+		return
+	}
+	if p.Dir+v < 0 {
+		p.Dir = (2 * math.Pi) + (p.Dir + v)
+		p.Cam.Angle = p.Dir
+		return
+	}
 	p.Dir += v
-	p.Cam.Angle += v
+	p.Cam.Angle = p.Dir
 }
 
 func (p *Player) Move(n *Point) {
