@@ -9,12 +9,12 @@ type Player struct {
 }
 
 //	constructor
-func NewPlayer(x, y, dr float64) *Player {
+func NewPlayer(m *Map, x, y, dr float64) *Player {
 	pos := NewPoint(x, y)
 	return &Player{
 		Pos: pos,
 		Dir: dr,
-		Cam: NewCamera(pos, dr, 0.5, 1),
+		Cam: NewCamera(pos, m, dr, 0.5, 1),
 	}
 }
 

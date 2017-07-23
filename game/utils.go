@@ -18,29 +18,14 @@ func GetQuadrant(a float64) int {
 	return 4
 }
 
-//	dda algorithm implemented to obtain array of points on a line where
-//	the line intersects with a an integer on either the x or y axis
-func DDA(p1, p2 Point) (v []*Point) {
-	var steps float64
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
-	if math.Abs(dx) > math.Abs(dy) {
-		steps = math.Abs(dx)
-	} else {
-		steps = math.Abs(dy)
-	}
-	xInc := dx / steps
-	yInc := dy / steps
-	for s := 0.0; s < steps; s++ {
-		p1.X += xInc
-		p1.Y += yInc
-		v = append(v, NewPoint(p1.X, p1.Y))
-	}
-	return
-}
-
+//	adds two point together to produce a new point
 func AddPoints(p1, p2 *Point) *Point {
 	return NewPoint(p1.X+p2.X, p1.Y+p2.Y)
+}
+
+//	calculates the distance between two points
+func DistanceBetweenPoints(p1, p2 *Point) float64 {
+	return math.Sqrt(math.Pow(p2.X-p1.X, 2) + math.Pow(p2.Y-p1.Y, 2))
 }
 
 //	given a starting point, a distance and an angle,
@@ -79,6 +64,34 @@ func GetFirstXIntersect(p *Point, a float64) *Point {
 	return NewPoint(x, y)
 }
 
+//	given a starting point and an angle, calculate the
+//  first point along the vector at which y is an integer
+func GetFirstYIntersect(p *Point, a float64) *Point {
+	var (
+		x, y, a2 float64
+	)
+	q := GetQuadrant(a)
+	switch q {
+	case 1:
+		y = math.Ceil(p.Y)
+		a2 = a
+		x = p.X + (y-p.Y)/math.Tan(a2)
+	case 2:
+		y = math.Ceil(p.Y)
+		a2 = math.Pi - a
+		x = p.X + (p.Y-y)/math.Tan(a2)
+	case 3:
+		y = math.Floor(p.Y)
+		a2 = a - math.Pi
+		x = p.X + (y-p.Y)/math.Tan(a2)
+	case 4:
+		y = math.Floor(p.Y)
+		a2 = 2*(math.Pi) - a
+		x = p.X + (p.Y-y)/math.Tan(a2)
+	}
+	return NewPoint(x, y)
+}
+
 //	given a starting point, an angle and a length, calculate
 //	all points along the vector at which x is an integer
 func GetXIntersects(p *Point, a, l float64) []*Point {
@@ -101,17 +114,24 @@ func GetXIntersects(p *Point, a, l float64) []*Point {
 	return is
 }
 
-//	given a starting point and an angle, calculate the
-//  first point along the vector at which y is an integer
-func GetFirstYIntersect(p *Point, a float64) *Point {
-	var (
-		x, y float64
-	)
-	if a > math.Pi {
-		y = float64(int(p.Y) + 1)
-	} else {
-		y = float64(int(p.Y) - 1)
+//	given a starting point, an angle and a length, calculate
+//	all points along the vector at which y is an integer
+func GetYIntersects(p *Point, a, l float64) []*Point {
+	op := float64(1)
+	ad := op / math.Tan(a)
+	hy := math.Sqrt(math.Pow(ad, 2) + math.Pow(op, 2))
+	q := GetQuadrant(a)
+	if q == 3 || q == 4 {
+		op = -op
+		ad = -ad
 	}
-	x = p.X + (p.Y-y)/math.Tan(a)
-	return NewPoint(x, y)
+	s := int(l / hy)
+	f := GetFirstYIntersect(p, a)
+	is := []*Point{f}
+	for i := 0; i < s; i++ {
+		x := is[len(is)-1].X + ad
+		y := is[len(is)-1].Y + op
+		is = append(is, NewPoint(x, y))
+	}
+	return is
 }

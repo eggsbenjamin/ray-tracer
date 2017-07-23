@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"os"
 	"runtime"
@@ -22,23 +21,19 @@ func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
 	for {
 		select {
 		case <-tick.C:
-			is := game.GetXIntersects(pl.Pos, pl.Dir, 10)
-			for _, i := range is {
-				fmt.Println(i)
-			}
 			clear(r)
-			drawMap(m, w, r)
+			drawMap(m, pl, w, r)
 			drawPlayer(pl, m, w, r)
 			r.Present()
 		}
 	}
 }
 
-func drawMap(m *game.Map, win *sdl.Window, r *sdl.Renderer) {
+func drawMap(m *game.Map, pl *game.Player, win *sdl.Window, r *sdl.Renderer) {
 	w, h := win.GetSize()
 	mw, mh := m.GetSize()
-	tw := w / mw
-	th := h / mh
+	tw := (w / mw) / 4
+	th := (h / mh) / 4
 	for y := 0; y < mh; y++ {
 		for x := 0; x < mw; x++ {
 			col := m.Palette[m.Grid[x][y]]
@@ -47,12 +42,20 @@ func drawMap(m *game.Map, win *sdl.Window, r *sdl.Renderer) {
 			r.DrawRect(rc)
 		}
 	}
+	xSc := float64(w) / float64(mw)
+	ySc := float64(h) / float64(mh)
+	d := pl.Cam.FOV / float64(w)
+	r.SetDrawColor(255, 255, 255, 1)
+	for i := 0; i <= w; i++ {
+		p := game.GetEndPoint(pl.Pos, 2.5, (pl.Dir-math.Pi/4)+(float64(i)*d))
+		r.DrawLine(int(xSc*pl.Pos.X)/4, int(ySc*pl.Pos.Y)/4, int(xSc*p.X)/4, int(ySc*p.Y)/4)
+	}
 }
 
 func drawPlayer(pl *game.Player, m *game.Map, win *sdl.Window, r *sdl.Renderer) {
 	w, h := win.GetSize()
 	mw, mh := m.GetSize()
-	pl.Cam.Render(w, h, mw, mh, 2.0, r)
+	pl.Cam.Render(w, h, mw, mh, 10.0, r)
 	/*
 		var xSc float64 = float64(w) / float64(mw)
 		var ySc float64 = float64(h) / float64(mh)
@@ -107,23 +110,23 @@ func main() {
 	}
 	defer w.Destroy()
 
-	pl := game.NewPlayer(2.5, 2.5, math.Pi/4)
 	pt := game.NewPalette()
 	pt[0] = game.BLACK
 	pt[1] = game.BLUE
 	m := game.NewMap(5, 5, pt)
 	m.Grid = [][]int{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	}
+	pl := game.NewPlayer(m, 2.5, 2.5, math.Pi/4)
 
 	events := make(chan sdl.Event)
 	done := make(chan bool)

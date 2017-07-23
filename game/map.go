@@ -31,7 +31,7 @@ func (m *Map) GetValueAtPoint(p *Point) int {
 	x := int(math.Floor(p.X))
 	y := int(math.Floor(p.Y))
 	w, h := m.GetSize()
-	if x >= w || y >= h { //	out of bounds...
+	if x < 0 || x >= w || y < 0 || y >= h { // out of bounds...
 		return -1
 	}
 	return m.Grid[x][y]

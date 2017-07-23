@@ -5,9 +5,8 @@ import "math"
 type Vector []*Point
 
 //	constructor
-func NewVector(p1, p2 Point) *Vector {
-	v := Vector(DDA(p1, p2))
-	return &v
+func NewVector(p1, p2 *Point) *Vector {
+	return &Vector{p1, p2}
 }
 
 //	get the initial point of the vector
