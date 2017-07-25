@@ -21,7 +21,7 @@ func NewMap(w, h int, p Palette) *Map {
 	}
 }
 
-//	returns the width and height respectively
+//	returns the width and height
 func (m *Map) GetSize() (int, int) {
 	return m.width(), m.height()
 }

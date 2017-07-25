@@ -22,6 +22,7 @@ func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
 		select {
 		case <-tick.C:
 			clear(r)
+			drawCeiling(w, r)
 			drawMap(m, pl, w, r)
 			drawPlayer(pl, m, w, r)
 			r.Present()
@@ -56,16 +57,14 @@ func drawPlayer(pl *game.Player, m *game.Map, win *sdl.Window, r *sdl.Renderer) 
 	w, h := win.GetSize()
 	mw, mh := m.GetSize()
 	pl.Cam.Render(w, h, mw, mh, 10.0, r)
-	/*
-		var xSc float64 = float64(w) / float64(mw)
-		var ySc float64 = float64(h) / float64(mh)
-		l := game.GetEndPoint(pl.Pos, pl.Cam.FocalLength, pl.Dir-(math.Pi/4))
-		rg := game.GetEndPoint(pl.Pos, pl.Cam.FocalLength, pl.Dir+(math.Pi/4))
-		r.SetDrawColor(255, 255, 255, 1)
-		r.DrawPoint(int(pl.Pos.X*xSc), int(pl.Pos.Y*ySc))
-		r.DrawLine(int(pl.Pos.X*xSc), int(pl.Pos.Y*ySc), int(l.X*xSc), int(l.Y*ySc))
-		r.DrawLine(int(pl.Pos.X*xSc), int(pl.Pos.Y*ySc), int(rg.X*xSc), int(rg.Y*ySc))
-	*/
+}
+
+func drawCeiling(win *sdl.Window, r *sdl.Renderer) {
+	w, h := win.GetSize()
+	rc := &sdl.Rect{0, 0, int32(w), int32(h / 2)}
+	col := game.GREY
+	r.SetDrawColor(col.R, col.G, col.B, col.A)
+	r.FillRect(rc)
 }
 
 func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
@@ -113,15 +112,16 @@ func main() {
 	pt := game.NewPalette()
 	pt[0] = game.BLACK
 	pt[1] = game.BLUE
+	pt[2] = game.RED
 	m := game.NewMap(5, 5, pt)
 	m.Grid = [][]int{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 2, 0, 2, 2, 2, 0, 0, 1},
+		{1, 0, 2, 0, 0, 0, 2, 0, 0, 1},
+		{1, 0, 2, 0, 0, 0, 2, 0, 0, 1},
+		{1, 0, 2, 2, 0, 2, 2, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},

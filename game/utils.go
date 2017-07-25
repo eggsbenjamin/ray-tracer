@@ -69,8 +69,8 @@ func GetFirstXIntersect(p *Point, a float64) *Point {
 func GetFirstYIntersect(p *Point, a float64) *Point {
 	var (
 		x, y, a2 float64
+		q        = GetQuadrant(a)
 	)
-	q := GetQuadrant(a)
 	switch q {
 	case 1:
 		y = math.Ceil(p.Y)

@@ -14,7 +14,7 @@ func NewPlayer(m *Map, x, y, dr float64) *Player {
 	return &Player{
 		Pos: pos,
 		Dir: dr,
-		Cam: NewCamera(pos, m, dr, 0.5, 1),
+		Cam: NewCamera(pos, m, dr, 0.5, 0.75),
 	}
 }
 

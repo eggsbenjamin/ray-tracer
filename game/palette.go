@@ -1,8 +1,10 @@
 package game
 
 var (
+	RED   = NewColour(255, 0, 0, 1)
 	BLUE  = NewColour(0, 92, 161, 1)
 	BLACK = NewColour(0, 0, 0, 1)
+	GREY  = NewColour(149, 144, 182, 1)
 )
 
 type Palette map[int]*Colour
