@@ -18,6 +18,17 @@ func GetQuadrant(a float64) int {
 	return 4
 }
 
+// express an angle in terms of [0, 2π]
+func NormaliseAngle(a float64) float64 {
+	if a > 2*math.Pi {
+		a = a - (2 * math.Pi)
+	}
+	if a < 0 {
+		a = (2 * math.Pi) + a
+	}
+	return a
+}
+
 //	adds two point together to produce a new point
 func AddPoints(p1, p2 *Point) *Point {
 	return NewPoint(p1.X+p2.X, p1.Y+p2.Y)

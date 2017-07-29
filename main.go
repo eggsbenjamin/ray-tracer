@@ -40,7 +40,7 @@ func drawMap(m *game.Map, pl *game.Player, win *sdl.Window, r *sdl.Renderer) {
 			col := m.Palette[m.Grid[x][y]]
 			rc := &sdl.Rect{int32(x * tw), int32(y * th), int32(tw), int32(th)}
 			r.SetDrawColor(col.R, col.G, col.B, col.A)
-			r.DrawRect(rc)
+			r.FillRect(rc)
 		}
 	}
 	xSc := float64(w) / float64(mw)

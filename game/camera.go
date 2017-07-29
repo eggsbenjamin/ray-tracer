@@ -29,7 +29,7 @@ func NewCamera(pos *Point, m *Map, a, fl, di float64) *Camera {
 func (c *Camera) Render(w, h, mw, mh int, l float64, r *sdl.Renderer) {
 	d := c.FOV / float64(w)
 	for x := 1; x <= w; x++ {
-		a := (c.Angle - c.FOV/2) + (float64(x) * d)
+		a := NormaliseAngle((c.Angle - c.FOV/2) + (float64(x) * d))
 		ry := NewRay(c.Pos, a, l)
 		p, v, _ := c.getNearestHit(ry)
 		if p != nil {
