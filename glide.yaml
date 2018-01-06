@@ -1,5 +1,0 @@
-package: github.com/eggsbenjamin/ray-tracer
-import:
-- package: github.com/veandco/go-sdl2
-  subpackages:
-  - sdl

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -33,8 +34,10 @@ func (c *Camera) Render(w, h, mw, mh int, l float64, r *sdl.Renderer) {
 		ry := NewRay(c.Pos, a, l)
 		p, v, _ := c.getNearestHit(ry)
 		if p != nil {
-			di := DistanceBetweenPoints(c.Pos, p)
-			sh := 128 / di * c.FocalLength
+			ra := (c.FOV / 2) - float64(x)*d
+			di := DistanceBetweenPoints(c.Pos, p) * math.Cos(ra)
+			fmt.Println(ra)
+			sh := 128 / di
 			col := c.Map.Palette[v]
 			r.SetDrawColor(col.R, col.G, col.B, col.A)
 			r.DrawLine(x, (h/2)-int(sh/2), x, (h/2)+int(sh/2))

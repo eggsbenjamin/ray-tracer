@@ -15,10 +15,7 @@ func NewPalette() Palette {
 }
 
 type Colour struct {
-	R uint8
-	G uint8
-	B uint8
-	A uint8
+	R, G, B, A uint8
 }
 
 //	constructor

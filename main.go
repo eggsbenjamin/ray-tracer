@@ -23,8 +23,8 @@ func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
 		case <-tick.C:
 			clear(r)
 			drawCeiling(w, r)
-			drawMap(m, pl, w, r)
 			drawPlayer(pl, m, w, r)
+			drawMap(m, pl, w, r)
 			r.Present()
 		}
 	}
@@ -68,7 +68,7 @@ func drawCeiling(win *sdl.Window, r *sdl.Renderer) {
 }
 
 func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
-	d := 0.2
+	d := 0.05
 	switch e.Keysym.Sym {
 	case sdl.K_UP:
 		n := game.GetEndPoint(pl.Pos, d, pl.Dir)
