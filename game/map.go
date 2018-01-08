@@ -5,19 +5,21 @@ import (
 )
 
 type Map struct {
-	Grid    [][]int
-	Palette Palette
+	Grid           [][]int
+	Palette        Palette
+	TexturePalette TexturePalette
 }
 
 //	constructor
-func NewMap(w, h int, p Palette) *Map {
+func NewMap(w, h int, p Palette, tp TexturePalette) *Map {
 	grid := make([][]int, w)
 	for i := 0; i < len(grid); i++ {
 		grid[i] = make([]int, h)
 	}
 	return &Map{
-		Grid:    grid,
-		Palette: p,
+		Grid:           grid,
+		Palette:        p,
+		TexturePalette: tp,
 	}
 }
 

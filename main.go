@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image/jpeg"
 	"math"
 	"os"
 	"runtime"
@@ -113,7 +114,30 @@ func main() {
 	pt[0] = game.BLACK
 	pt[1] = game.BLUE
 	pt[2] = game.RED
-	m := game.NewMap(5, 5, pt)
+
+	stoneWall, err := os.Open(game.STONE_WALL_PATH)
+	if err != nil {
+		panic(err)
+	}
+	stoneWallTexture, err := jpeg.Decode(stoneWall)
+	if err != nil {
+		panic(err)
+	}
+
+	brickWall, err := os.Open(game.ORANGE_STONE_WALL)
+	if err != nil {
+		panic(err)
+	}
+	brickWallTexture, err := jpeg.Decode(brickWall)
+	if err != nil {
+		panic(err)
+	}
+
+	tPt := game.NewTexturePalette()
+	tPt[1] = brickWallTexture
+	tPt[2] = stoneWallTexture
+
+	m := game.NewMap(5, 5, pt, tPt)
 	m.Grid = [][]int{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},

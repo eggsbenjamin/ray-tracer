@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -27,25 +26,35 @@ func NewCamera(pos *Point, m *Map, a, fl, di float64) *Camera {
 	}
 }
 
-func (c *Camera) Render(w, h, mw, mh int, l float64, r *sdl.Renderer) {
+func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
 	d := c.FOV / float64(w)
 	for x := 1; x <= w; x++ {
-		a := NormaliseAngle((c.Angle - c.FOV/2) + (float64(x) * d))
-		ry := NewRay(c.Pos, a, l)
-		p, v, _ := c.getNearestHit(ry)
+		angle := NormaliseAngle((c.Angle - c.FOV/2) + (float64(x) * d))
+		ray := NewRay(c.Pos, angle, l)
+		p, v, yHit, xOffset := c.getNearestHit(ray)
 		if p != nil {
 			ra := (c.FOV / 2) - float64(x)*d
 			di := DistanceBetweenPoints(c.Pos, p) * math.Cos(ra)
-			fmt.Println(ra)
 			sh := 128 / di
-			col := c.Map.Palette[v]
-			r.SetDrawColor(col.R, col.G, col.B, col.A)
-			r.DrawLine(x, (h/2)-int(sh/2), x, (h/2)+int(sh/2))
+			y1, y2 := (h/2)-int(sh/2), (h/2)+int(sh/2)
+			tex := c.Map.TexturePalette[v]
+
+			for i := y1; i < y2; i++ {
+				texX := float64(tex.Bounds().Dx()) * xOffset
+				texY := float64((i - y1)) * float64(tex.Bounds().Dy()) / sh
+				r32, g32, b32, a32 := tex.At(int(texX), int(texY)).RGBA()
+				r, g, b, a := uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
+				if yHit {
+					r, g, b, a = (r >> 1), (g >> 1), (b >> 1), (a >> 1)
+				}
+				renderer.SetDrawColor(r, g, b, a)
+				renderer.DrawPoint(x, i)
+			}
 		}
 	}
 }
 
-func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool) {
+func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool, float64) {
 	var (
 		xv, yv int
 		x, y   *Point = nil, nil
@@ -76,18 +85,18 @@ func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool) {
 		}
 	}
 	if x == nil && y == nil {
-		return nil, 0, false
+		return nil, 0, false, 0
 	}
 	if x == nil {
-		return y, yv, true
+		return y, yv, true, y.X - math.Floor(y.X)
 	}
 	if y == nil {
-		return x, xv, false
+		return x, xv, false, x.Y - math.Floor(x.Y)
 	}
 	xd := DistanceBetweenPoints(c.Pos, x)
 	yd := DistanceBetweenPoints(c.Pos, y)
 	if xd < yd {
-		return x, xv, false
+		return x, xv, false, x.Y - math.Floor(x.Y)
 	}
-	return y, yv, true
+	return y, yv, true, y.X - math.Floor(y.X)
 }

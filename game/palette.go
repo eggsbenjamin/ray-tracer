@@ -1,5 +1,9 @@
 package game
 
+import (
+	"image"
+)
+
 var (
 	RED   = NewColour(255, 0, 0, 1)
 	BLUE  = NewColour(0, 92, 161, 1)
@@ -26,4 +30,16 @@ func NewColour(r, g, b, a uint8) *Colour {
 		B: b,
 		A: a,
 	}
+}
+
+const (
+	ORANGE_STONE_WALL = "./assets/orange_stone_wall.jpg"
+	STONE_WALL_PATH   = "./assets/stone_wall.jpg"
+)
+
+type TexturePalette map[int]image.Image
+
+// constructor
+func NewTexturePalette() TexturePalette {
+	return TexturePalette{}
 }
