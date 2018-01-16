@@ -5,21 +5,23 @@ import (
 )
 
 type Map struct {
-	Grid           [][]int
-	Palette        Palette
-	TexturePalette TexturePalette
+	Grid                   [][]int
+	Palette                Palette
+	TexturePalette         WallTexturePalette
+	WalkableTexturePalette WalkableTexturePalette
 }
 
 //	constructor
-func NewMap(w, h int, p Palette, tp TexturePalette) *Map {
+func NewMap(w, h int, p Palette, tp WallTexturePalette, wtp WalkableTexturePalette) *Map {
 	grid := make([][]int, w)
 	for i := 0; i < len(grid); i++ {
 		grid[i] = make([]int, h)
 	}
 	return &Map{
-		Grid:           grid,
-		Palette:        p,
-		TexturePalette: tp,
+		Grid:                   grid,
+		Palette:                p,
+		TexturePalette:         tp,
+		WalkableTexturePalette: wtp,
 	}
 }
 
@@ -33,7 +35,7 @@ func (m *Map) GetValueAtPoint(p *Point) int {
 	x := int(math.Floor(p.X))
 	y := int(math.Floor(p.Y))
 	w, h := m.GetSize()
-	if x < 0 || x >= w || y < 0 || y >= h { // out of bounds...
+	if x < 0 || y >= w || y < 0 || x >= h { // out of bounds...
 		return -1
 	}
 	return m.Grid[x][y]

@@ -71,19 +71,19 @@ func drawCeiling(win *sdl.Window, r *sdl.Renderer) {
 func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
 	d := 0.05
 	switch e.Keysym.Sym {
-	case sdl.K_UP:
+	case sdl.K_w:
 		n := game.GetEndPoint(pl.Pos, d, pl.Dir)
 		if ok := m.Walkable(n); ok {
 			pl.Move(n)
 		}
-	case sdl.K_DOWN:
+	case sdl.K_s:
 		n := game.GetEndPoint(pl.Pos, -d, pl.Dir)
 		if ok := m.Walkable(n); ok {
 			pl.Move(n)
 		}
-	case sdl.K_LEFT:
+	case sdl.K_a:
 		pl.Rotate(-0.1)
-	case sdl.K_RIGHT:
+	case sdl.K_d:
 		pl.Rotate(0.1)
 	}
 }
@@ -137,20 +137,18 @@ func main() {
 	tPt[1] = brickWallTexture
 	tPt[2] = stoneWallTexture
 
-	m := game.NewMap(5, 5, pt, tPt)
+	m := game.NewMap(5, 5, pt, tPt, nil)
 	m.Grid = [][]int{
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 2, 0, 2, 2, 2, 0, 0, 1},
-		{1, 0, 2, 0, 0, 0, 2, 0, 0, 1},
-		{1, 0, 2, 0, 0, 0, 2, 0, 0, 1},
-		{1, 0, 2, 2, 0, 2, 2, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{2, 2, 2, 2, 2, 2, 2, 2},
+		{2, 0, 0, 0, 0, 0, 0, 2},
+		{2, 0, 2, 0, 2, 2, 0, 2},
+		{2, 0, 2, 0, 0, 2, 0, 2},
+		{2, 0, 2, 0, 0, 2, 0, 2},
+		{2, 0, 2, 2, 0, 2, 0, 2},
+		{2, 0, 0, 0, 0, 0, 0, 2},
+		{2, 2, 2, 2, 2, 2, 2, 2},
 	}
-	pl := game.NewPlayer(m, 2.5, 2.5, math.Pi/4)
+	pl := game.NewPlayer(m, 1.5, 1.5, math.Pi/4)
 
 	events := make(chan sdl.Event)
 	done := make(chan bool)

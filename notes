@@ -1,0 +1,23 @@
+Floor Casting
+
+get pixel y in projection plane
+
+(tan(field of view/2) * focal length) * 2 = actual length of projection plane (ppl)
+
+ppl/w = converstion factor between pixels and actual distance (cf)
+
+(y - h/2) * cf = distance between projection plane center row and y (dcpp)
+
+sqrt(((w/2 - x) * cf)^2 + focal length^2)) = distance between player and pixel on projection plane (dppp) 
+
+dppp/dcpp = tangent of angle from player to floor point (ta)
+
+player height * ta = distance along floor to floor point (df)
+
+player x + df * cos(original angle) = texture x coordinate
+
+player y + df * sin(original angle) = texture y coordinate
+
+
+
+ 

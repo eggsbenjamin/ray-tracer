@@ -34,13 +34,14 @@ func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
 		p, v, yHit, xOffset := c.getNearestHit(ray)
 		if p != nil {
 			ra := (c.FOV / 2) - float64(x)*d
-			di := DistanceBetweenPoints(c.Pos, p) * math.Cos(ra)
+			dp := DistanceBetweenPoints(c.Pos, p)
+			di := dp * math.Cos(ra)
 			sh := 128 / di
 			y1, y2 := (h/2)-int(sh/2), (h/2)+int(sh/2)
 			tex := c.Map.TexturePalette[v]
+			texX := float64(tex.Bounds().Dx()) * xOffset
 
 			for i := y1; i < y2; i++ {
-				texX := float64(tex.Bounds().Dx()) * xOffset
 				texY := float64((i - y1)) * float64(tex.Bounds().Dy()) / sh
 				r32, g32, b32, a32 := tex.At(int(texX), int(texY)).RGBA()
 				r, g, b, a := uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
@@ -49,6 +50,26 @@ func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
 				}
 				renderer.SetDrawColor(r, g, b, a)
 				renderer.DrawPoint(x, i)
+			}
+
+			ppl := (math.Tan(c.FOV/2) * c.FocalLength) * 2
+			cf := ppl / float64(w)
+			dppp := math.Sqrt(math.Pow(math.Abs(float64(w/2-x))*cf, 2) + math.Pow(c.FocalLength, 2))
+
+			for i := y2; i < h; i++ {
+				dcpp := float64(i-(h/2)) * cf
+				ta := dppp / dcpp
+				df := (float64(256) * cf) * ta
+
+				fp := NewPoint(c.Pos.X+df*math.Cos(angle), c.Pos.Y+df*math.Sin(angle))
+				texX := (fp.X - math.Floor(fp.X)) * float64(tex.Bounds().Dx())
+				texY := (fp.Y - math.Floor(fp.Y)) * float64(tex.Bounds().Dy())
+
+				r32, g32, b32, a32 := tex.At(int(texX), int(texY)).RGBA()
+				r, g, b, a := uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
+				renderer.SetDrawColor(r, g, b, a)
+				renderer.DrawPoint(x, i)         // draw floor
+				renderer.DrawPoint(x, y1-(i-y2)) // draw ceiling
 			}
 		}
 	}

@@ -35,11 +35,32 @@ func NewColour(r, g, b, a uint8) *Colour {
 const (
 	ORANGE_STONE_WALL = "./assets/orange_stone_wall.jpg"
 	STONE_WALL_PATH   = "./assets/stone_wall.jpg"
+	GRASS_PATH        = "./assets/grass.jpg"
 )
 
-type TexturePalette map[int]image.Image
+type WallTexturePalette map[int]image.Image
 
 // constructor
-func NewTexturePalette() TexturePalette {
-	return TexturePalette{}
+func NewTexturePalette() WallTexturePalette {
+	return WallTexturePalette{}
+}
+
+type WalkableTexture struct {
+	Floor   image.Image
+	Ceiling image.Image
+}
+
+// constructor
+func NewWalkableTexture(f image.Image, c image.Image) *WalkableTexture {
+	return &WalkableTexture{
+		Floor:   f,
+		Ceiling: c,
+	}
+}
+
+type WalkableTexturePalette map[int]*WalkableTexture
+
+// constructor
+func NewWalkableTexturePalette() WalkableTexturePalette {
+	return WalkableTexturePalette{}
 }
