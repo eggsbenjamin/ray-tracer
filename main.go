@@ -4,7 +4,6 @@ import (
 	"image/jpeg"
 	"math"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/eggsbenjamin/ray-tracer/game"
@@ -18,11 +17,14 @@ func clear(r *sdl.Renderer) {
 }
 
 func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
+	var done bool
 	tick := time.NewTicker(time.Second / 30)
-	for {
+
+	for !done {
 		select {
 		case <-tick.C:
 			clear(r)
+			handleEvents(pl, m, &done)
 			drawCeiling(w, r)
 			drawPlayer(pl, m, w, r)
 			drawMap(m, pl, w, r)
@@ -69,7 +71,7 @@ func drawCeiling(win *sdl.Window, r *sdl.Renderer) {
 }
 
 func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
-	d := 0.05
+	d := 0.2
 	switch e.Keysym.Sym {
 	case sdl.K_w:
 		n := game.GetEndPoint(pl.Pos, d, pl.Dir)
@@ -88,16 +90,20 @@ func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
 	}
 }
 
-func handleEvents(pl *game.Player, m *game.Map, events chan sdl.Event, done chan<- bool) {
+func handleEvents(pl *game.Player, m *game.Map, done *bool) {
 	for {
-		e := <-events
+		e := sdl.PollEvent()
+		if e == nil {
+			return
+		}
+
 		switch e.(type) {
 		case *sdl.KeyDownEvent:
 			if k, ok := e.(*sdl.KeyDownEvent); ok {
 				handleKeyDownEvent(pl, m, k)
 			}
 		case *sdl.QuitEvent:
-			done <- true
+			*done = true
 		}
 	}
 }
@@ -150,17 +156,5 @@ func main() {
 	}
 	pl := game.NewPlayer(m, 1.5, 1.5, math.Pi/4)
 
-	events := make(chan sdl.Event)
-	done := make(chan bool)
-	go handleEvents(pl, m, events, done)
-	go run(m, pl, w, r)
-
-	runtime.LockOSThread()
-	for {
-		select {
-		case events <- sdl.WaitEvent():
-		case <-done:
-			os.Exit(0)
-		}
-	}
+	run(m, pl, w, r)
 }

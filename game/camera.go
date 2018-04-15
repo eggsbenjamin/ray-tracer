@@ -36,7 +36,7 @@ func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
 			ra := (c.FOV / 2) - float64(x)*d
 			dp := DistanceBetweenPoints(c.Pos, p)
 			di := dp * math.Cos(ra)
-			sh := 128 / di
+			sh := 512 / di
 			y1, y2 := (h/2)-int(sh/2), (h/2)+int(sh/2)
 			tex := c.Map.TexturePalette[v]
 			texX := float64(tex.Bounds().Dx()) * xOffset
@@ -59,7 +59,7 @@ func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
 			for i := y2; i < h; i++ {
 				dcpp := float64(i-(h/2)) * cf
 				ta := dppp / dcpp
-				df := (float64(256) * cf) * ta
+				df := (float64(512) * cf) * ta
 
 				fp := NewPoint(c.Pos.X+df*math.Cos(angle), c.Pos.Y+df*math.Sin(angle))
 				texX := (fp.X - math.Floor(fp.X)) * float64(tex.Bounds().Dx())
