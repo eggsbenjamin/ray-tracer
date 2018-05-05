@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -27,6 +28,7 @@ func NewCamera(pos *Point, m *Map, a, fl, di float64) *Camera {
 }
 
 func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
+	fmt.Println(w, h)
 	d := c.FOV / float64(w)
 	for x := 1; x <= w; x++ {
 		angle := NormaliseAngle((c.Angle - c.FOV/2) + (float64(x) * d))

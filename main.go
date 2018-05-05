@@ -10,6 +10,10 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+var (
+	width, height int = 640, 480
+)
+
 func clear(r *sdl.Renderer) {
 	wr := &sdl.Rect{0, 0, 500, 500}
 	r.SetDrawColor(0, 0, 0, 0)
@@ -57,9 +61,8 @@ func drawMap(m *game.Map, pl *game.Player, win *sdl.Window, r *sdl.Renderer) {
 }
 
 func drawPlayer(pl *game.Player, m *game.Map, win *sdl.Window, r *sdl.Renderer) {
-	w, h := win.GetSize()
 	mw, mh := m.GetSize()
-	pl.Cam.Render(w, h, mw, mh, 10.0, r)
+	pl.Cam.Render(width, height, mw, mh, 10.0, r)
 }
 
 func drawCeiling(win *sdl.Window, r *sdl.Renderer) {
@@ -110,11 +113,21 @@ func handleEvents(pl *game.Player, m *game.Map, done *bool) {
 
 func main() {
 	sdl.Init(sdl.INIT_EVERYTHING)
-	w, r, err := sdl.CreateWindowAndRenderer(500, 500, sdl.WINDOW_SHOWN)
+	w, r, err := sdl.CreateWindowAndRenderer(width, height, sdl.WINDOW_FULLSCREEN_DESKTOP)
 	if err != nil {
 		panic(err)
 	}
 	defer w.Destroy()
+	defer r.Destroy()
+
+	displayMode := &sdl.DisplayMode{}
+	if err := sdl.GetDesktopDisplayMode(0, displayMode); err != nil {
+		panic(err)
+	}
+
+	if err := r.SetScale(float32(displayMode.W)/float32(width), float32(displayMode.H)/float32(height)); err != nil {
+		panic(err)
+	}
 
 	pt := game.NewPalette()
 	pt[0] = game.BLACK
@@ -140,8 +153,8 @@ func main() {
 	}
 
 	tPt := game.NewTexturePalette()
-	tPt[1] = brickWallTexture
-	tPt[2] = stoneWallTexture
+	tPt[2] = brickWallTexture
+	tPt[1] = stoneWallTexture
 
 	m := game.NewMap(5, 5, pt, tPt, nil)
 	m.Grid = [][]int{
