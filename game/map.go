@@ -5,23 +5,19 @@ import (
 )
 
 type Map struct {
-	Grid                   [][]int
-	Palette                Palette
-	TexturePalette         WallTexturePalette
-	WalkableTexturePalette WalkableTexturePalette
+	Grid           [][]int
+	TexturePalette WallTexturePalette
 }
 
 //	constructor
-func NewMap(w, h int, p Palette, tp WallTexturePalette, wtp WalkableTexturePalette) *Map {
+func NewMap(w, h int, tp WallTexturePalette) *Map {
 	grid := make([][]int, w)
 	for i := 0; i < len(grid); i++ {
 		grid[i] = make([]int, h)
 	}
 	return &Map{
-		Grid:                   grid,
-		Palette:                p,
-		TexturePalette:         tp,
-		WalkableTexturePalette: wtp,
+		Grid:           grid,
+		TexturePalette: tp,
 	}
 }
 
@@ -39,6 +35,14 @@ func (m *Map) GetValueAtPoint(p *Point) int {
 		return -1
 	}
 	return m.Grid[x][y]
+}
+
+func (m *Map) GetTextureAtPoint(p *Point) *Texture {
+	if v := m.GetValueAtPoint(p); v != -1 {
+		return m.TexturePalette[v]
+	}
+
+	return nil
 }
 
 //	returns a boolean indicating if the given position is walkable

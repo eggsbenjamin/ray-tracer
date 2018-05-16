@@ -2,13 +2,15 @@ package game
 
 import (
 	"image"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 var (
 	RED   = NewColour(255, 0, 0, 1)
 	BLUE  = NewColour(0, 92, 161, 1)
 	BLACK = NewColour(0, 0, 0, 1)
-	GREY  = NewColour(149, 144, 182, 1)
+	GREY  = NewColour(128, 128, 128, 1)
 )
 
 type Palette map[int]*Colour
@@ -38,7 +40,19 @@ const (
 	GRASS_PATH        = "./assets/grass.jpg"
 )
 
-type WallTexturePalette map[int]image.Image
+type Texture struct {
+	image.Image
+	*sdl.Texture
+}
+
+func NewTexture(img image.Image, tx *sdl.Texture) *Texture {
+	return &Texture{
+		img,
+		tx,
+	}
+}
+
+type WallTexturePalette map[int]*Texture
 
 // constructor
 func NewTexturePalette() WallTexturePalette {

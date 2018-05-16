@@ -1,80 +1,102 @@
 package game
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 type Camera struct {
-	Pos         *Point
-	Angle       float64
+	Focus       Focusable
 	FocalLength float64
 	FOV         float64
-	Map         *Map
+	Level       *Level
 }
 
 //	constructor
-func NewCamera(pos *Point, m *Map, a, fl, di float64) *Camera {
+func NewCamera(f Focusable, l *Level, fl, di float64) *Camera {
 	fov := 2 * math.Atan((di/2)/fl)
 	return &Camera{
-		Pos:         pos,
-		Angle:       a,
+		Focus:       f,
 		FocalLength: fl,
 		FOV:         fov,
-		Map:         m,
+		Level:       l,
 	}
 }
 
 func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
-	fmt.Println(w, h)
+	c.drawFloor(w, h, GREY, renderer)
+	c.drawSky(w, h, renderer)
+
 	d := c.FOV / float64(w)
 	for x := 1; x <= w; x++ {
-		angle := NormaliseAngle((c.Angle - c.FOV/2) + (float64(x) * d))
-		ray := NewRay(c.Pos, angle, l)
-		p, v, yHit, xOffset := c.getNearestHit(ray)
+		angle := NormaliseAngle((c.Focus.Dir() - c.FOV/2) + (float64(x) * d))
+		ray := NewRay(c.Focus.Pos(), angle, l)
+		p, v, _, xOffset := c.getNearestHit(ray)
 		if p != nil {
 			ra := (c.FOV / 2) - float64(x)*d
-			dp := DistanceBetweenPoints(c.Pos, p)
+			dp := DistanceBetweenPoints(c.Focus.Pos(), p)
 			di := dp * math.Cos(ra)
 			sh := 512 / di
 			y1, y2 := (h/2)-int(sh/2), (h/2)+int(sh/2)
-			tex := c.Map.TexturePalette[v]
-			texX := float64(tex.Bounds().Dx()) * xOffset
+			tex := c.Level.Walls.TexturePalette[v]
+			_, _, iw, ih, _ := tex.Query()
+			texX := float64(iw) * xOffset
 
-			for i := y1; i < y2; i++ {
-				texY := float64((i - y1)) * float64(tex.Bounds().Dy()) / sh
-				r32, g32, b32, a32 := tex.At(int(texX), int(texY)).RGBA()
-				r, g, b, a := uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
-				if yHit {
-					r, g, b, a = (r >> 1), (g >> 1), (b >> 1), (a >> 1)
+			if err := renderer.Copy(tex.Texture, &sdl.Rect{int32(texX), 0, 1, ih}, &sdl.Rect{int32(x), int32(y1), 1, int32(y2 - y1)}); err != nil {
+				panic(err)
+			}
+
+			/*
+				ppl := (math.Tan(c.FOV/2) * c.FocalLength) * 2
+				cf := ppl / float64(w)
+				dppp := math.Sqrt(math.Pow(math.Abs(float64(w/2-x))*cf, 2) + math.Pow(c.FocalLength, 2))
+
+				for i := y2; i < h; i++ {
+					dcpp := float64(i-(h/2)) * cf
+					ta := dppp / dcpp
+					df := (float64(512) * cf) * ta
+
+					fp := NewPoint(c.Focus.Pos().X+df*math.Cos(angle), c.Focus.Pos().Y+df*math.Sin(angle))
+
+					floorTex := c.Level.Floor.GetTextureAtPoint(NewPoint(1, 1))
+					texX := (fp.X - math.Floor(fp.X)) * float64(floorTex.Image.Bounds().Dx())
+					texY := (fp.Y - math.Floor(fp.Y)) * float64(floorTex.Image.Bounds().Dy())
+
+					r32, g32, b32, a32 := floorTex.At(int(texX), int(texY)).RGBA()
+					r, g, b, a := uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
+
+					renderer.SetDrawColor(r, g, b, a)
+					renderer.DrawPoint(x, i) // draw floor
+
+					ceilTex := c.Level.Ceiling.GetTextureAtPoint(NewPoint(1, 1))
+					texX = (fp.X - math.Floor(fp.X)) * float64(ceilTex.Image.Bounds().Dx())
+					texY = (fp.Y - math.Floor(fp.Y)) * float64(ceilTex.Image.Bounds().Dy())
+
+					r32, g32, b32, a32 = ceilTex.At(int(texX), int(texY)).RGBA()
+					r, g, b, a = uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
+
+					renderer.SetDrawColor(r, g, b, a)
+					renderer.DrawPoint(x, y1-(i-y2)) // draw ceiling
 				}
-				renderer.SetDrawColor(r, g, b, a)
-				renderer.DrawPoint(x, i)
-			}
-
-			ppl := (math.Tan(c.FOV/2) * c.FocalLength) * 2
-			cf := ppl / float64(w)
-			dppp := math.Sqrt(math.Pow(math.Abs(float64(w/2-x))*cf, 2) + math.Pow(c.FocalLength, 2))
-
-			for i := y2; i < h; i++ {
-				dcpp := float64(i-(h/2)) * cf
-				ta := dppp / dcpp
-				df := (float64(512) * cf) * ta
-
-				fp := NewPoint(c.Pos.X+df*math.Cos(angle), c.Pos.Y+df*math.Sin(angle))
-				texX := (fp.X - math.Floor(fp.X)) * float64(tex.Bounds().Dx())
-				texY := (fp.Y - math.Floor(fp.Y)) * float64(tex.Bounds().Dy())
-
-				r32, g32, b32, a32 := tex.At(int(texX), int(texY)).RGBA()
-				r, g, b, a := uint8(r32>>8), uint8(g32>>8), uint8(b32>>8), uint8(a32>>8)
-				renderer.SetDrawColor(r, g, b, a)
-				renderer.DrawPoint(x, i)         // draw floor
-				renderer.DrawPoint(x, y1-(i-y2)) // draw ceiling
-			}
+			*/
 		}
 	}
+}
+
+func (c *Camera) drawFloor(w, h int, col *Colour, r *sdl.Renderer) {
+	r.SetDrawColor(col.R, col.G, col.B, col.A)
+	r.FillRect(&sdl.Rect{
+		0, int32(h / 2), int32(w), int32(h / 2),
+	})
+}
+
+func (c *Camera) drawSky(w, h int, r *sdl.Renderer) {
+	col := BLACK
+	r.SetDrawColor(col.R, col.G, col.B, col.A)
+	r.FillRect(&sdl.Rect{
+		0, 0, int32(w), int32(h / 2),
+	})
 }
 
 func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool, float64) {
@@ -86,9 +108,9 @@ func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool, float64) {
 	xis := r.XIntersects()
 	for _, xi := range xis {
 		if q == 2 || q == 3 {
-			xv = c.Map.GetValueAtPoint(NewPoint(xi.X-1, xi.Y))
+			xv = c.Level.Walls.GetValueAtPoint(NewPoint(xi.X-1, xi.Y))
 		} else {
-			xv = c.Map.GetValueAtPoint(xi)
+			xv = c.Level.Walls.GetValueAtPoint(xi)
 		}
 		if xv > 0 {
 			x = xi
@@ -98,9 +120,9 @@ func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool, float64) {
 	yis := r.YIntersects()
 	for _, yi := range yis {
 		if q > 2 {
-			yv = c.Map.GetValueAtPoint(NewPoint(yi.X, yi.Y-1))
+			yv = c.Level.Walls.GetValueAtPoint(NewPoint(yi.X, yi.Y-1))
 		} else {
-			yv = c.Map.GetValueAtPoint(yi)
+			yv = c.Level.Walls.GetValueAtPoint(yi)
 		}
 		if yv > 0 {
 			y = yi
@@ -116,8 +138,8 @@ func (c *Camera) getNearestHit(r *Ray) (*Point, int, bool, float64) {
 	if y == nil {
 		return x, xv, false, x.Y - math.Floor(x.Y)
 	}
-	xd := DistanceBetweenPoints(c.Pos, x)
-	yd := DistanceBetweenPoints(c.Pos, y)
+	xd := DistanceBetweenPoints(c.Focus.Pos(), x)
+	yd := DistanceBetweenPoints(c.Focus.Pos(), y)
 	if xd < yd {
 		return x, xv, false, x.Y - math.Floor(x.Y)
 	}

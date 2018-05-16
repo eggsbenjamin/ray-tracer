@@ -1,4 +1,4 @@
-Floor Casting -> DONE!!!
+Floor casting -> DONE!!!
 	get pixel y in projection plane
 	
 	(tan(field of view/2) * focal length) * 2 = actual length of projection plane (ppl)
@@ -21,12 +21,19 @@ Focus to window when starting in fullscreen -> DONE!!!
   - investigate
     - SDL arg??? -> correct - `WINDOW_FULLSCREEN_DESKTOP`
 
-Scale To Fullscreen -> DONE!!!
+Scale to fullscreen -> DONE!!!
     - investigate why it doesn't scale atm -> solved through use of `WINDOW_FULLSCREEN_DESKTOP`
       - hardcoded values?
 
 Make less jarring
   - investigate
     - is jarring movement related to performance or input handling?
-      - at a modest resolution (640*480) it's fine so input handling should be improved.
+      - at a modest resolution (640*480) it's fine so input handling should be improved. <- IMPROVED - runs at a decent (1280*960) resolution now.
       - performance can *definitely* be improved though...
+        - stop drawing pixels individually! <- DONE (for walls)
+        - utilise harware acceleration via *Sdl.Texture <- DONE (for walls)
+        - figure out how to draw floor and ceiling using this method...
+
+Fix slowdown when close to wall -> DONE!!! render stripes instead of pixels
+  - investigate
+    - may be related to rays cast not stopping at the wall???

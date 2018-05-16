@@ -1,26 +1,69 @@
 package main
 
 import (
+	"fmt"
 	"image/jpeg"
 	"math"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/eggsbenjamin/ray-tracer/game"
+	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-var (
-	width, height int = 640, 480
-)
-
-func clear(r *sdl.Renderer) {
-	wr := &sdl.Rect{0, 0, 500, 500}
-	r.SetDrawColor(0, 0, 0, 0)
-	r.FillRect(wr)
+func init() {
+	if retVal := img.Init(img.INIT_JPG); retVal == 0 {
+		panic("Handle this better! " + img.GetError().Error())
+	}
 }
 
-func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
+const (
+	defaultWidth, defaultHeight int = 640, 480
+	defaultFPS                  int = 30
+)
+
+var (
+	width, height int = defaultWidth, defaultHeight
+	FPS           int = defaultFPS
+)
+
+func init() {
+	widthStr, heightStr, FPSStr := os.Getenv("WIDTH"), os.Getenv("HEIGHT"), os.Getenv("FPS")
+
+	widthV, err := strconv.Atoi(widthStr)
+	if err != nil {
+		fmt.Println("Using default width")
+		widthV = defaultWidth
+	}
+	width = widthV
+
+	heightV, err := strconv.Atoi(heightStr)
+	if err != nil {
+		fmt.Println("Using default height")
+		heightV = defaultHeight
+	}
+	height = heightV
+
+	FPSV, err := strconv.Atoi(FPSStr)
+	if err != nil {
+		fmt.Println("Using default FPS")
+		FPSV = defaultFPS
+	}
+	FPS = FPSV
+
+	fmt.Printf("FPS: %d\n", FPS)
+	fmt.Printf("Resolution: %dx%d\n", width, height)
+}
+
+func clear(r *sdl.Renderer) {
+	if err := r.Clear(); err != nil {
+		panic(err)
+	}
+}
+
+func run(l *game.Level, pl *game.Player, c *game.Camera, w *sdl.Window, r *sdl.Renderer) {
 	var done bool
 	tick := time.NewTicker(time.Second / 30)
 
@@ -28,62 +71,30 @@ func run(m *game.Map, pl *game.Player, w *sdl.Window, r *sdl.Renderer) {
 		select {
 		case <-tick.C:
 			clear(r)
-			handleEvents(pl, m, &done)
-			drawCeiling(w, r)
-			drawPlayer(pl, m, w, r)
-			drawMap(m, pl, w, r)
+			handleEvents(pl, l, &done)
+			render(c, l, w, r)
 			r.Present()
 		}
 	}
 }
 
-func drawMap(m *game.Map, pl *game.Player, win *sdl.Window, r *sdl.Renderer) {
+func render(c *game.Camera, l *game.Level, win *sdl.Window, r *sdl.Renderer) {
 	w, h := win.GetSize()
-	mw, mh := m.GetSize()
-	tw := (w / mw) / 4
-	th := (h / mh) / 4
-	for y := 0; y < mh; y++ {
-		for x := 0; x < mw; x++ {
-			col := m.Palette[m.Grid[x][y]]
-			rc := &sdl.Rect{int32(x * tw), int32(y * th), int32(tw), int32(th)}
-			r.SetDrawColor(col.R, col.G, col.B, col.A)
-			r.FillRect(rc)
-		}
-	}
-	xSc := float64(w) / float64(mw)
-	ySc := float64(h) / float64(mh)
-	d := pl.Cam.FOV / float64(w)
-	r.SetDrawColor(255, 255, 255, 1)
-	for i := 0; i <= w; i++ {
-		p := game.GetEndPoint(pl.Pos, 2.5, (pl.Dir-math.Pi/4)+(float64(i)*d))
-		r.DrawLine(int(xSc*pl.Pos.X)/4, int(ySc*pl.Pos.Y)/4, int(xSc*p.X)/4, int(ySc*p.Y)/4)
-	}
+	mw, mh := l.GetSize()
+	c.Render(w, h, mw, mh, 10.0, r)
 }
 
-func drawPlayer(pl *game.Player, m *game.Map, win *sdl.Window, r *sdl.Renderer) {
-	mw, mh := m.GetSize()
-	pl.Cam.Render(width, height, mw, mh, 10.0, r)
-}
-
-func drawCeiling(win *sdl.Window, r *sdl.Renderer) {
-	w, h := win.GetSize()
-	rc := &sdl.Rect{0, 0, int32(w), int32(h / 2)}
-	col := game.GREY
-	r.SetDrawColor(col.R, col.G, col.B, col.A)
-	r.FillRect(rc)
-}
-
-func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
+func handleKeyDownEvent(pl *game.Player, l *game.Level, e *sdl.KeyDownEvent) {
 	d := 0.2
 	switch e.Keysym.Sym {
 	case sdl.K_w:
-		n := game.GetEndPoint(pl.Pos, d, pl.Dir)
-		if ok := m.Walkable(n); ok {
+		n := game.GetEndPoint(pl.Pos(), d, pl.Dir())
+		if ok := l.Walkable(n); ok {
 			pl.Move(n)
 		}
 	case sdl.K_s:
-		n := game.GetEndPoint(pl.Pos, -d, pl.Dir)
-		if ok := m.Walkable(n); ok {
+		n := game.GetEndPoint(pl.Pos(), -d, pl.Dir())
+		if ok := l.Walkable(n); ok {
 			pl.Move(n)
 		}
 	case sdl.K_a:
@@ -93,7 +104,7 @@ func handleKeyDownEvent(pl *game.Player, m *game.Map, e *sdl.KeyDownEvent) {
 	}
 }
 
-func handleEvents(pl *game.Player, m *game.Map, done *bool) {
+func handleEvents(pl *game.Player, l *game.Level, done *bool) {
 	for {
 		e := sdl.PollEvent()
 		if e == nil {
@@ -103,7 +114,7 @@ func handleEvents(pl *game.Player, m *game.Map, done *bool) {
 		switch e.(type) {
 		case *sdl.KeyDownEvent:
 			if k, ok := e.(*sdl.KeyDownEvent); ok {
-				handleKeyDownEvent(pl, m, k)
+				handleKeyDownEvent(pl, l, k)
 			}
 		case *sdl.QuitEvent:
 			*done = true
@@ -129,45 +140,100 @@ func main() {
 		panic(err)
 	}
 
+	sdl.ShowCursor(0) // hide cursor
+
 	pt := game.NewPalette()
 	pt[0] = game.BLACK
 	pt[1] = game.BLUE
 	pt[2] = game.RED
 
-	stoneWall, err := os.Open(game.STONE_WALL_PATH)
+	doorTx, err := img.LoadTexture(r, "./assets/sci-fi_panel_texture-door.jpg")
+	if err != nil {
+		panic("Handle this better! " + err.Error())
+	}
+
+	wallTx, err := img.LoadTexture(r, "./assets/sci-fi_floor_texture-wall.jpg")
+	if err != nil {
+		panic("Handle this better! " + err.Error())
+	}
+
+	door, err := os.Open("./assets/sci-fi_panel_texture-door.jpg")
 	if err != nil {
 		panic(err)
 	}
-	stoneWallTexture, err := jpeg.Decode(stoneWall)
+	doorImg, err := jpeg.Decode(door)
 	if err != nil {
 		panic(err)
 	}
 
-	brickWall, err := os.Open(game.ORANGE_STONE_WALL)
-	if err != nil {
-		panic(err)
-	}
-	brickWallTexture, err := jpeg.Decode(brickWall)
+	wall, err := os.Open("./assets/sci-fi_floor_texture-wall.jpg")
 	if err != nil {
 		panic(err)
 	}
 
-	tPt := game.NewTexturePalette()
-	tPt[2] = brickWallTexture
-	tPt[1] = stoneWallTexture
-
-	m := game.NewMap(5, 5, pt, tPt, nil)
-	m.Grid = [][]int{
-		{2, 2, 2, 2, 2, 2, 2, 2},
-		{2, 0, 0, 0, 0, 0, 0, 2},
-		{2, 0, 2, 0, 2, 2, 0, 2},
-		{2, 0, 2, 0, 0, 2, 0, 2},
-		{2, 0, 2, 0, 0, 2, 0, 2},
-		{2, 0, 2, 2, 0, 2, 0, 2},
-		{2, 0, 0, 0, 0, 0, 0, 2},
-		{2, 2, 2, 2, 2, 2, 2, 2},
+	wallImg, err := jpeg.Decode(wall)
+	if err != nil {
+		panic(err)
 	}
-	pl := game.NewPlayer(m, 1.5, 1.5, math.Pi/4)
 
-	run(m, pl, w, r)
+	wallTPt := game.NewTexturePalette()
+	wallTPt[1] = game.NewTexture(doorImg, doorTx)
+	wallTPt[2] = game.NewTexture(wallImg, wallTx)
+
+	walls := game.NewMap(5, 5, wallTPt)
+	walls.Grid = [][]int{
+		{2, 2, 2, 2, 1, 2, 2, 2, 2},
+		{2, 0, 0, 0, 0, 0, 0, 0, 2},
+		{2, 0, 2, 2, 0, 2, 2, 0, 2},
+		{2, 0, 2, 2, 0, 2, 2, 0, 2},
+		{2, 0, 0, 0, 0, 0, 0, 0, 2},
+		{2, 0, 2, 2, 0, 2, 2, 0, 2},
+		{2, 0, 2, 2, 0, 2, 2, 0, 2},
+		{2, 0, 0, 0, 0, 0, 0, 0, 2},
+		{2, 2, 2, 2, 1, 2, 2, 2, 2},
+	}
+
+	floorTx, err := img.LoadTexture(r, "./assets/metal_floor_texture-floor.jpg")
+	if err != nil {
+		panic("Handle this better! " + err.Error())
+	}
+
+	fl, err := os.Open("./assets/metal_floor_texture-floor.jpg")
+	if err != nil {
+		panic(err)
+	}
+
+	floorImg, err := jpeg.Decode(fl)
+	if err != nil {
+		panic(err)
+	}
+
+	floorTpt := game.NewTexturePalette()
+	floorTpt[0] = game.NewTexture(floorImg, floorTx)
+	floor := game.NewMap(5, 5, floorTpt)
+
+	ceilTx, err := img.LoadTexture(r, "./assets/rusty_floor_texture-floor2.jpg")
+	if err != nil {
+		panic("Handle this better! " + err.Error())
+	}
+
+	ce, err := os.Open("./assets/rusty_floor_texture-floor2.jpg")
+	if err != nil {
+		panic(err)
+	}
+
+	ceilImg, err := jpeg.Decode(ce)
+	if err != nil {
+		panic(err)
+	}
+
+	ceilTpt := game.NewTexturePalette()
+	ceilTpt[0] = game.NewTexture(ceilImg, ceilTx)
+	ceil := game.NewMap(5, 5, ceilTpt)
+
+	level := game.NewLevel(game.NewPoint(1.5, 1.5), floor, walls, ceil)
+	pl := game.NewPlayer(level.StartingPos, math.Pi/4)
+	c := game.NewCamera(pl, level, 0.5, 0.75)
+
+	run(level, pl, c, w, r)
 }
