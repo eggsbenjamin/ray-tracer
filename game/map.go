@@ -5,15 +5,15 @@ import (
 )
 
 type Map struct {
-	Grid           [][]int
+	Grid           [][]Tile
 	TexturePalette WallTexturePalette
 }
 
 //	constructor
 func NewMap(w, h int, tp WallTexturePalette) *Map {
-	grid := make([][]int, w)
+	grid := make([][]Tile, w)
 	for i := 0; i < len(grid); i++ {
-		grid[i] = make([]int, h)
+		grid[i] = make([]Tile, h)
 	}
 	return &Map{
 		Grid:           grid,
@@ -27,19 +27,19 @@ func (m *Map) GetSize() (int, int) {
 }
 
 //	gets the value of a square containing a given point
-func (m *Map) GetValueAtPoint(p *Point) int {
+func (m *Map) GetValueAtPoint(p *Point) Tile {
 	x := int(math.Floor(p.X))
 	y := int(math.Floor(p.Y))
 	w, h := m.GetSize()
 	if x < 0 || y >= w || y < 0 || x >= h { // out of bounds...
-		return -1
+		return nil
 	}
 	return m.Grid[x][y]
 }
 
 func (m *Map) GetTextureAtPoint(p *Point) *Texture {
-	if v := m.GetValueAtPoint(p); v != -1 {
-		return m.TexturePalette[v]
+	if v := m.GetValueAtPoint(p); v != nil {
+		return v.Texture()
 	}
 
 	return nil
@@ -47,7 +47,11 @@ func (m *Map) GetTextureAtPoint(p *Point) *Texture {
 
 //	returns a boolean indicating if the given position is walkable
 func (m *Map) Walkable(p *Point) bool {
-	return m.GetValueAtPoint(p) == 0
+	if v := m.GetValueAtPoint(p); v != nil {
+		return v.Walkable()
+	}
+
+	return true
 }
 
 func (m *Map) width() int {

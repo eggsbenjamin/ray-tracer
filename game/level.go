@@ -12,7 +12,15 @@ func (l *Level) GetSize() (int, int) {
 
 //	returns a boolean indicating if the given position is walkable
 func (l *Level) Walkable(p *Point) bool {
-	return l.Walls.GetValueAtPoint(p) == 0
+	return l.Walls.Walkable(p)
+}
+
+func (l *Level) Interact(p *Point, pl *Player) bool {
+	if i, ok := l.Walls.GetValueAtPoint(p).(Interactable); ok {
+		return i.Interact(pl, l)
+	}
+
+	return false
 }
 
 func NewLevel(sp *Point, f, w, c *Map) *Level {

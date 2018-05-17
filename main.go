@@ -101,6 +101,9 @@ func handleKeyDownEvent(pl *game.Player, l *game.Level, e *sdl.KeyDownEvent) {
 		pl.Rotate(-0.1)
 	case sdl.K_d:
 		pl.Rotate(0.1)
+	case sdl.K_e:
+		n := game.GetEndPoint(pl.Pos(), d*3, pl.Dir())
+		l.Interact(n, pl)
 	}
 }
 
@@ -180,17 +183,34 @@ func main() {
 	wallTPt[1] = game.NewTexture(doorImg, doorTx)
 	wallTPt[2] = game.NewTexture(wallImg, wallTx)
 
+	wl := game.NewWall(game.NewTexture(wallImg, wallTx))
+
 	walls := game.NewMap(5, 5, wallTPt)
-	walls.Grid = [][]int{
-		{2, 2, 2, 2, 1, 2, 2, 2, 2},
-		{2, 0, 0, 0, 0, 0, 0, 0, 2},
-		{2, 0, 2, 2, 0, 2, 2, 0, 2},
-		{2, 0, 2, 2, 0, 2, 2, 0, 2},
-		{2, 0, 0, 0, 0, 0, 0, 0, 2},
-		{2, 0, 2, 2, 0, 2, 2, 0, 2},
-		{2, 0, 2, 2, 0, 2, 2, 0, 2},
-		{2, 0, 0, 0, 0, 0, 0, 0, 2},
-		{2, 2, 2, 2, 1, 2, 2, 2, 2},
+	walls.Grid = [][]game.Tile{
+		{wl, wl, wl, wl, game.NewDoor(game.NewTexture(doorImg, doorTx)), wl, wl, wl, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, game.NewDoor(game.NewTexture(doorImg, doorTx)), wl, wl, wl, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, game.NewDoor(game.NewTexture(doorImg, doorTx)), wl, wl, wl, wl},
+		{wl, wl, wl, wl, nil, wl, wl, wl, wl},
+		{wl, wl, wl, wl, nil, wl, wl, wl, wl},
+		{wl, wl, wl, wl, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, nil, wl, wl, nil, wl},
+		{wl, wl, wl, wl, nil, wl, wl, nil, wl},
+		{wl, wl, wl, wl, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, wl, wl, wl, wl, wl},
 	}
 
 	floorTx, err := img.LoadTexture(r, "./assets/metal_floor_texture-floor.jpg")
