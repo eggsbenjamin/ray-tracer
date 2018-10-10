@@ -1,8 +1,6 @@
 package game
 
 import (
-	"image"
-
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -40,41 +38,9 @@ const (
 	GRASS_PATH        = "./assets/grass.jpg"
 )
 
-type Texture struct {
-	image.Image
-	*sdl.Texture
-}
-
-func NewTexture(img image.Image, tx *sdl.Texture) *Texture {
-	return &Texture{
-		img,
-		tx,
-	}
-}
-
-type WallTexturePalette map[int]*Texture
+type WallTexturePalette map[int]*sdl.Texture
 
 // constructor
 func NewTexturePalette() WallTexturePalette {
 	return WallTexturePalette{}
-}
-
-type WalkableTexture struct {
-	Floor   image.Image
-	Ceiling image.Image
-}
-
-// constructor
-func NewWalkableTexture(f image.Image, c image.Image) *WalkableTexture {
-	return &WalkableTexture{
-		Floor:   f,
-		Ceiling: c,
-	}
-}
-
-type WalkableTexturePalette map[int]*WalkableTexture
-
-// constructor
-func NewWalkableTexturePalette() WalkableTexturePalette {
-	return WalkableTexturePalette{}
 }

@@ -2,6 +2,8 @@ package game
 
 import (
 	"math"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type Map struct {
@@ -37,7 +39,7 @@ func (m *Map) GetValueAtPoint(p *Point) Tile {
 	return m.Grid[x][y]
 }
 
-func (m *Map) GetTextureAtPoint(p *Point) *Texture {
+func (m *Map) GetTextureAtPoint(p *Point) *sdl.Texture {
 	if v := m.GetValueAtPoint(p); v != nil {
 		return v.Texture()
 	}

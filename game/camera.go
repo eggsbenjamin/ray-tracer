@@ -25,8 +25,9 @@ func NewCamera(f Focusable, l *Level, fl, di float64) *Camera {
 }
 
 func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
-	c.drawFloor(w, h, GREY, renderer)
-	c.drawSky(w, h, renderer)
+	w, h = 640, 480
+	c.drawFloor(640, 480, GREY, renderer)
+	c.drawSky(640, 480, renderer)
 
 	d := c.FOV / float64(w)
 	for x := 1; x <= w; x++ {
@@ -43,7 +44,11 @@ func (c *Camera) Render(w, h, mw, mh int, l float64, renderer *sdl.Renderer) {
 			_, _, iw, ih, _ := v.Texture().Query()
 			texX := float64(iw) * xOffset
 
-			if err := renderer.Copy(tex.Texture, &sdl.Rect{int32(texX), 0, 1, ih}, &sdl.Rect{int32(x), int32(y1), 1, int32(y2 - y1)}); err != nil {
+			if err := renderer.Copy(
+				tex,
+				&sdl.Rect{int32(texX), 0, 1, ih},
+				&sdl.Rect{int32(x), int32(y1) - 50, 1, int32(y2 - y1)},
+			); err != nil {
 				panic(err)
 			}
 		}
@@ -58,7 +63,7 @@ func (c *Camera) drawFloor(w, h int, col *Colour, r *sdl.Renderer) {
 }
 
 func (c *Camera) drawSky(w, h int, r *sdl.Renderer) {
-	col := BLACK // TODO - skybox??
+	col := GREY
 	r.SetDrawColor(col.R, col.G, col.B, col.A)
 	r.FillRect(&sdl.Rect{
 		0, 0, int32(w), int32(h / 2),

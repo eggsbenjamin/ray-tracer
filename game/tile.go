@@ -1,7 +1,9 @@
 package game
 
+import "github.com/veandco/go-sdl2/sdl"
+
 type Tile interface {
-	Texture() *Texture
+	Texture() *sdl.Texture
 	Walkable() bool
 	Visable() bool
 }
@@ -11,16 +13,16 @@ type Interactable interface {
 }
 
 type Wall struct {
-	tex *Texture
+	tex *sdl.Texture
 }
 
-func NewWall(tex *Texture) *Wall {
+func NewWall(tex *sdl.Texture) *Wall {
 	return &Wall{
 		tex: tex,
 	}
 }
 
-func (w *Wall) Texture() *Texture {
+func (w *Wall) Texture() *sdl.Texture {
 	return w.tex
 }
 
@@ -33,17 +35,17 @@ func (w *Wall) Visable() bool {
 }
 
 type Door struct {
-	tex  *Texture
+	tex  *sdl.Texture
 	open bool
 }
 
-func NewDoor(tex *Texture) *Door {
+func NewDoor(tex *sdl.Texture) *Door {
 	return &Door{
 		tex: tex,
 	}
 }
 
-func (d *Door) Texture() *Texture {
+func (d *Door) Texture() *sdl.Texture {
 	return d.tex
 }
 

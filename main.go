@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"image/jpeg"
 	"math"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/eggsbenjamin/ray-tracer/asset"
 	"github.com/eggsbenjamin/ray-tracer/game"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -20,13 +20,16 @@ func init() {
 }
 
 const (
-	defaultWidth, defaultHeight int = 640, 480
-	defaultFPS                  int = 30
+	defaultWidth, defaultHeight                  int    = 640, 480
+	defaultFPS                                   int    = 30
+	fontSize                                     int    = 1000
+	soundsPath, musicPath, fontsPath, imagesPath string = "./assets/audio/sounds/", "./assets/audio/music/", "./assets/fonts/", "./assets/images/"
 )
 
 var (
 	width, height int = defaultWidth, defaultHeight
 	FPS           int = defaultFPS
+	rTex          *sdl.Texture
 )
 
 func init() {
@@ -57,12 +60,6 @@ func init() {
 	fmt.Printf("Resolution: %dx%d\n", width, height)
 }
 
-func clear(r *sdl.Renderer) {
-	if err := r.Clear(); err != nil {
-		panic(err)
-	}
-}
-
 func run(l *game.Level, pl *game.Player, c *game.Camera, w *sdl.Window, r *sdl.Renderer) {
 	var done bool
 	tick := time.NewTicker(time.Second / 30)
@@ -70,40 +67,74 @@ func run(l *game.Level, pl *game.Player, c *game.Camera, w *sdl.Window, r *sdl.R
 	for !done {
 		select {
 		case <-tick.C:
-			clear(r)
 			handleEvents(pl, l, &done)
+			update(pl, l)
 			render(c, l, w, r)
-			r.Present()
 		}
 	}
 }
 
+func update(pl *game.Player, l *game.Level) {
+	pl.Update(l)
+}
+
 func render(c *game.Camera, l *game.Level, win *sdl.Window, r *sdl.Renderer) {
+	if err := r.Clear(); err != nil {
+		panic(err)
+	}
+
 	w, h := win.GetSize()
 	mw, mh := l.GetSize()
 	c.Render(w, h, mw, mh, 10.0, r)
+	if err := r.SetRenderTarget(nil); err != nil {
+		panic(err)
+	}
+
+	if err := r.Copy(rTex, nil, nil); err != nil {
+		panic(err)
+	}
+
+	r.Present()
+	if err := r.SetRenderTarget(rTex); err != nil {
+		panic(err)
+	}
 }
 
 func handleKeyDownEvent(pl *game.Player, l *game.Level, e *sdl.KeyDownEvent) {
 	d := 0.2
 	switch e.Keysym.Sym {
 	case sdl.K_w:
-		n := game.GetEndPoint(pl.Pos(), d, pl.Dir())
-		if ok := l.Walkable(n); ok {
-			pl.Move(n)
-		}
+		pl.SetState("walking-forward")
 	case sdl.K_s:
-		n := game.GetEndPoint(pl.Pos(), -d, pl.Dir())
-		if ok := l.Walkable(n); ok {
-			pl.Move(n)
-		}
+		pl.SetState("walking-backward")
+	case 46:
+		pl.SetState("strafing-left")
+	case 47:
+		pl.SetState("strafing-right")
 	case sdl.K_a:
-		pl.Rotate(-0.1)
+		pl.SetState("rotating-left")
 	case sdl.K_d:
-		pl.Rotate(0.1)
+		pl.SetState("rotating-right")
 	case sdl.K_e:
 		n := game.GetEndPoint(pl.Pos(), d*3, pl.Dir())
 		l.Interact(n, pl)
+	}
+}
+
+func handleKeyUpEvent(pl *game.Player, l *game.Level, e *sdl.KeyUpEvent) {
+	switch e.Keysym.Sym {
+	case sdl.K_w:
+		pl.UnsetState("walking-forward")
+	case sdl.K_s:
+		pl.UnsetState("walking-backward")
+	case sdl.K_a:
+		pl.UnsetState("rotating-left")
+	case sdl.K_d:
+		pl.UnsetState("rotating-right")
+	case 46:
+		pl.UnsetState("strafing-left")
+	case 47:
+		pl.UnsetState("strafing-right")
 	}
 }
 
@@ -118,6 +149,10 @@ func handleEvents(pl *game.Player, l *game.Level, done *bool) {
 		case *sdl.KeyDownEvent:
 			if k, ok := e.(*sdl.KeyDownEvent); ok {
 				handleKeyDownEvent(pl, l, k)
+			}
+		case *sdl.KeyUpEvent:
+			if k, ok := e.(*sdl.KeyUpEvent); ok {
+				handleKeyUpEvent(pl, l, k)
 			}
 		case *sdl.QuitEvent:
 			*done = true
@@ -144,116 +179,71 @@ func main() {
 	}
 
 	sdl.ShowCursor(0) // hide cursor
-
-	pt := game.NewPalette()
-	pt[0] = game.BLACK
-	pt[1] = game.BLUE
-	pt[2] = game.RED
-
-	doorTx, err := img.LoadTexture(r, "./assets/sci-fi_panel_texture-door.jpg")
-	if err != nil {
-		panic("Handle this better! " + err.Error())
-	}
-
-	wallTx, err := img.LoadTexture(r, "./assets/sci-fi_floor_texture-wall.jpg")
-	if err != nil {
-		panic("Handle this better! " + err.Error())
-	}
-
-	door, err := os.Open("./assets/sci-fi_panel_texture-door.jpg")
+	tx, err := r.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_TARGET, width, height)
 	if err != nil {
 		panic(err)
 	}
-	doorImg, err := jpeg.Decode(door)
-	if err != nil {
+	rTex = tx
+
+	if err := r.SetRenderTarget(rTex); err != nil {
 		panic(err)
 	}
 
-	wall, err := os.Open("./assets/sci-fi_floor_texture-wall.jpg")
-	if err != nil {
-		panic(err)
-	}
+	assetmgr := asset.NewManager(r, fontsPath, imagesPath, fontSize)
+	assetmgr.LoadContent()
 
-	wallImg, err := jpeg.Decode(wall)
-	if err != nil {
-		panic(err)
-	}
-
-	wallTPt := game.NewTexturePalette()
-	wallTPt[1] = game.NewTexture(doorImg, doorTx)
-	wallTPt[2] = game.NewTexture(wallImg, wallTx)
-
-	wl := game.NewWall(game.NewTexture(wallImg, wallTx))
-
-	walls := game.NewMap(5, 5, wallTPt)
-	walls.Grid = [][]game.Tile{
-		{wl, wl, wl, wl, game.NewDoor(game.NewTexture(doorImg, doorTx)), wl, wl, wl, wl},
-		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
-		{wl, wl, wl, wl, game.NewDoor(game.NewTexture(doorImg, doorTx)), wl, wl, wl, wl},
-		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, wl, wl, nil, wl, wl, nil, wl},
-		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
-		{wl, wl, wl, wl, game.NewDoor(game.NewTexture(doorImg, doorTx)), wl, wl, wl, wl},
-		{wl, wl, wl, wl, nil, wl, wl, wl, wl},
-		{wl, wl, wl, wl, nil, wl, wl, wl, wl},
-		{wl, wl, wl, wl, nil, nil, nil, nil, wl},
-		{wl, wl, wl, wl, nil, wl, wl, nil, wl},
-		{wl, wl, wl, wl, nil, wl, wl, nil, wl},
-		{wl, wl, wl, wl, nil, nil, nil, nil, wl},
-		{wl, wl, wl, wl, wl, wl, wl, wl, wl},
-	}
-
-	floorTx, err := img.LoadTexture(r, "./assets/metal_floor_texture-floor.jpg")
-	if err != nil {
-		panic("Handle this better! " + err.Error())
-	}
-
-	fl, err := os.Open("./assets/metal_floor_texture-floor.jpg")
-	if err != nil {
-		panic(err)
-	}
-
-	floorImg, err := jpeg.Decode(fl)
-	if err != nil {
-		panic(err)
-	}
-
-	floorTpt := game.NewTexturePalette()
-	floorTpt[0] = game.NewTexture(floorImg, floorTx)
-	floor := game.NewMap(5, 5, floorTpt)
-
-	ceilTx, err := img.LoadTexture(r, "./assets/rusty_floor_texture-floor2.jpg")
-	if err != nil {
-		panic("Handle this better! " + err.Error())
-	}
-
-	ce, err := os.Open("./assets/rusty_floor_texture-floor2.jpg")
-	if err != nil {
-		panic(err)
-	}
-
-	ceilImg, err := jpeg.Decode(ce)
-	if err != nil {
-		panic(err)
-	}
-
-	ceilTpt := game.NewTexturePalette()
-	ceilTpt[0] = game.NewTexture(ceilImg, ceilTx)
-	ceil := game.NewMap(5, 5, ceilTpt)
-
-	level := game.NewLevel(game.NewPoint(1.5, 1.5), floor, walls, ceil)
-	pl := game.NewPlayer(level.StartingPos, math.Pi/4)
+	level := initLevel(assetmgr)
+	pl := game.NewPlayer(level.StartingPos, math.Pi/4, 0.25, 0.1, nil)
 	c := game.NewCamera(pl, level, 0.5, 0.75)
 
 	run(level, pl, c, w, r)
+}
+
+func initLevel(assetmgr asset.Manager) *game.Level {
+	wl := game.NewWall(assetmgr.GetImage("sci-fi_floor_texture-wall"))
+	sWl := game.NewWall(assetmgr.GetImage("metal_floor_texture-floor"))
+
+	walls := game.NewMap(5, 5, nil)
+	walls.Grid = [][]game.Tile{
+		{wl, wl, wl, wl, game.NewDoor(assetmgr.GetImage("sci-fi_panel_texture-door")), wl, wl, wl, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, game.NewDoor(assetmgr.GetImage("sci-fi_panel_texture-door")), wl, wl, wl, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, sWl, nil, nil, nil, sWl, nil, wl},
+		{wl, nil, nil, nil, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, game.NewDoor(assetmgr.GetImage("sci-fi_panel_texture-door")), wl, wl, wl, wl},
+		{wl, wl, wl, nil, nil, sWl, sWl, sWl, wl},
+		{wl, wl, wl, nil, nil, sWl, sWl, sWl, wl},
+		{wl, wl, wl, nil, nil, nil, nil, nil, wl},
+		{wl, wl, wl, nil, nil, wl, wl, nil, wl},
+		{wl, wl, wl, nil, nil, wl, wl, nil, wl},
+		{wl, wl, wl, nil, nil, nil, nil, nil, wl},
+		{wl, wl, wl, wl, wl, wl, wl, wl, wl},
+	}
+
+	return game.NewLevel(game.NewPoint(1.5, 1.5), nil, walls, nil, nil)
+}
+
+func initWeapons(assetmgr asset.Manager) []game.Weapon {
+	hgImg := assetmgr.GetImage("handgun_sprite")
+	hgSs := game.NewSpriteSheet(hgImg)
+	hgAnim := game.NewAnimation(hgSs, []*sdl.Rect{
+		{10, 5, 85, 105},
+		{120, 5, 95, 105},
+		{240, 5, 85, 105},
+		{345, 5, 85, 105},
+	})
+	_ = hgAnim
+
+	return nil
 }
